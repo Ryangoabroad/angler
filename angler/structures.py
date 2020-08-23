@@ -251,4 +251,52 @@ def accelerator_multi(beta, gap, lambda0, L, spc, num_channels, dl, NPML, eps_st
     design_region = apply_regions(des_list, xs, ys, eps_start=2)
     design_region = design_region - 1
 
-    return eps_r, design_region    
+    return eps_r, design_region
+
+
+def MN_port(M, N, L, H, w, d, l, spc, dl, NPML, eps_start):
+    # CONSTRUCTS A ONE IN N OUT PORT DEVICE
+    # N         : number of outputs
+    # L         : box length in L0
+    # H         : box width  in L0
+    # w         : waveguide widths in L0
+    # d         : distance between adjacent waveguide (centers) in L0相邻波导间距
+    # dl        : grid size in L0栅格大小
+    # l         : distance between waveguide and design region in L0 (x)
+    # spc       : spc bewtween PML and top/bottom of design region
+    # shape     : shape of the permittivity output
+    # eps_start : starting relative permittivity
+
+    Nx = 2 * NPML[0] + int((2 * l + L) / dl)  # num. grids in horizontal水平栅格数目
+    Ny = 2 * NPML[1] + int((H + 2 * spc) / dl)  # num. grids in vertical竖直栅格数目
+    nx, ny = int(Nx / 2), int(Ny / 2)  # halfway grid points半栅格坐标点
+    shape = (Nx, Ny)  # shape of domain (in num. grids)水平垂直范围
+
+    y_mid = 0
+    wg_width_px = int(w / dl)  # 波导的栅格数目
+
+    # x and y coordinate arrays xy坐标数组
+    xs, ys = get_grid(shape, dl)  # 计算dl栅格坐标
+
+    # define the regions定义区域
+    box = lambda x, y: (np.abs(x) < L / 2) * (np.abs(y - y_mid) < H / 2)  # lambda是匿名函数和def定义区别
+    # wg_in  = lambda x, y: (x < 0)           * (np.abs(y-0.01) < dl*wg_width_px/2)  # note, this slight offset is to fix gridding issues注意这轻微设置是为了弥补栅格问题
+
+    # reg_list = [box, wg_in]
+    reg_list = [box]
+
+    # 第j个输入口的位置和设计区域
+    for j in range(M):
+        y_j = (float(j) - float(M - 1) / 2.0) * d
+        wg_j = lambda x, y, y_j=y_j: (x < 0) * (np.abs(y - y_j) < dl * wg_width_px / 2)
+        reg_list.append(wg_j)
+        # 第i个输出口的位置和设计区域
+    for i in range(N):
+        y_i = (float(i) - float(N - 1) / 2.0) * d
+        wg_i = lambda x, y, y_i=y_i: (x > 0) * (np.abs(y - y_i) < dl * wg_width_px / 2)
+        reg_list.append(wg_i)
+
+    eps_r = apply_regions(reg_list, xs, ys, eps_start)  # 介电常数显示在区域上
+    design_region = apply_regions([box], xs, ys, 2) - 1  # 设计区域
+
+    return eps_r, design_region  # 返回介电常数和设计区域

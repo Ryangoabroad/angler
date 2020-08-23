@@ -15,7 +15,7 @@ from angler.plot import plt_base_eps, plt_base
 class Simulation:
 
     def __init__(self, omega, eps_r, dl, NPML, pol, L0=DEFAULT_LENGTH_SCALE):
-        # initializes Fdfd object
+        # initializes Fdfd object 初始化FDFD
 
         self.L0 = L0
         self.omega = omega
@@ -36,7 +36,7 @@ class Simulation:
         self.Ny = Ny
 
         self.mu_r = np.ones((self.Nx, self.Ny))
-        self.src = np.zeros((self.Nx, self.Ny), dtype=np.complex64)
+        self.src = np.zeros((self.Nx, self.Ny), dtype=np.complex64) #这是初始化的啥
 
         self.xrange = [0, float(self.Nx*self.dl)]
         self.yrange = [0, float(self.Ny*self.dl)]
@@ -45,7 +45,7 @@ class Simulation:
         self.omega = float(self.omega)
         self.dl = float(dl)
 
-        # construct the system matrix
+        # construct the system matrix 构建系统矩阵
         self.eps_r = eps_r
 
         self.modes = []
@@ -55,19 +55,19 @@ class Simulation:
         self.dnl_deps = np.zeros(eps_r.shape)
 
     def setup_modes(self):
-        # calculates
+        # calculates 进行计算
         for modei in self.modes:
-            modei.setup_src(self)
+            modei.setup_src(self) #setup_src是啥？
 
     def add_mode(self, neff, direction_normal, center, width,
                  scale=1, order=1):
-        # adds a mode definition to the simulation
+        # adds a mode definition to the simulation 在仿真中加一个模式定义
         new_mode = mode(neff, direction_normal, center, width,
                         scale=scale, order=order)
         self.modes.append(new_mode)
 
     def compute_nl(self, e, matrix_format=DEFAULT_MATRIX_FORMAT):
-        # evaluates the nonlinear functions for a field e
+        # evaluates the nonlinear functions for a field e 计算非线性场
         self.eps_nl = np.zeros(self.eps_r.shape)
         self.dnl_de = np.zeros(self.eps_r.shape)
         self.dnl_deps = np.zeros(self.eps_r.shape)
@@ -80,7 +80,7 @@ class Simulation:
         self.Anl = Anl
 
     def add_nl(self, chi, nl_region, nl_type='kerr', eps_scale=False, eps_max=None):
-        # adds a nonlinearity to the simulation
+        # adds a nonlinearity to the simulation 在仿真中添加非线性
         new_nl = Nonlinearity(chi/np.square(self.L0), nl_region, nl_type, eps_scale, eps_max)
         self.nonlinearity.append(new_nl)
 
@@ -89,7 +89,7 @@ class Simulation:
         return self.__eps_r
 
     @eps_r.setter
-    def eps_r(self, new_eps):
+    def eps_r(self, new_eps): #计算介电常数
 
         grid_shape = new_eps.shape
         if len(grid_shape) == 1:
@@ -112,7 +112,7 @@ class Simulation:
 
     def solve_fields(self, include_nl=False, timing=False, averaging=False,
                      matrix_format=DEFAULT_MATRIX_FORMAT):
-        # performs direct solve for A given source
+        # performs direct solve for A given source 对一个给定光源求解
 
         EPSILON_0_ = EPSILON_0*self.L0
         MU_0_ = MU_0*self.L0
@@ -247,7 +247,7 @@ class Simulation:
         # to do, check for correct types as well.
 
     def flux_probe(self, direction_normal, center, width, nl=False):
-        # computes the total flux across the plane (line in 2D) defined by direction_normal, center, width
+        # computes the total flux across the plane (line in 2D) defined by direction_normal, center, width 计算线上的能流
 
         # first extract the slice of the permittivity
         if direction_normal == "x":
@@ -349,8 +349,8 @@ class Simulation:
         index_lin = np.sqrt(np.real(self.eps_r))
         return np.abs(index_nl - index_lin)
 
-    def plt_abs(self, nl=False, cbar=True, outline=True, ax=None, vmin=None, vmax=None, logscale=False, tiled_y=1):
-        # plot np.absolute value of primary field (e.g. Ez/Hz)
+    def plt_abs(self, nl=False, cbar=True, outline=True, ax=None, vmin=None, vmax=None, bar="magma", logscale=False, tiled_y=1):
+        # plot np.absolute value of primary field (e.g. Ez/Hz) 画出主要场的绝对值
 
         if self.fields[self.pol] is None:
             raise ValueError("need to solve the simulation first")
@@ -372,7 +372,7 @@ class Simulation:
         if vmin is None:
             vmin = 0.0
 
-        cmap = "magma"
+        cmap = bar
 
         return plt_base(field_val, outline_val, cmap, vmin, vmax, self.pol,
                         cbar=cbar, outline=outline, ax=ax, logscale=logscale)
@@ -430,7 +430,7 @@ class Simulation:
                         self.pol, cbar=cbar, outline=outline, ax=ax)
 
     def plt_eps(self, cbar=True, outline=True, ax=None, tiled_y=1):
-        # plot the permittivity distribution
+        # plot the permittivity distribution 画出介电常数分布
 
         eps_r = deepcopy(self.eps_r)
         eps_r = np.hstack(tiled_y*[eps_r])

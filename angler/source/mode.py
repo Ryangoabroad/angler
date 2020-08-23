@@ -17,10 +17,10 @@ class mode:
         self.scale = scale
 
     def setup_src(self, simulation, matrix_format=DEFAULT_MATRIX_FORMAT):
-        # compute the input power here using an only waveguide simulation
+        # compute the input power here using an only waveguide simulation 用一次波导仿真来计算输入能量
         self.compute_normalization(simulation, matrix_format=matrix_format)
 
-        # insert the mode into the waveguide
+        # insert the mode into the waveguide 把模式插入波导
         self.insert_mode(simulation, simulation.src, matrix_format=matrix_format)
 
     def compute_normalization(self, simulation, matrix_format=DEFAULT_MATRIX_FORMAT):
@@ -36,7 +36,7 @@ class mode:
         simulation_norm = deepcopy(simulation)
         new_center = list(self.center)
 
-        # compute where the source and waveguide should be
+        # compute where the source and waveguide should be 确定位置
         if self.direction_normal == "x":
             inds_y = original_eps[self.center[0], :] > 1
             norm_eps[:, inds_y] = eps_max
@@ -50,9 +50,9 @@ class mode:
 
         # reset the permittivity to be a straight waveguide, solve fields, compute power
         simulation_norm.eps_r = norm_eps
-        self.insert_mode(simulation_norm, simulation_norm.src, matrix_format=matrix_format)
+        self.insert_mode(simulation_norm, simulation_norm.src, matrix_format=matrix_format) #调用insert mode函数
         simulation_norm.solve_fields()
-        W_in = simulation_norm.flux_probe(self.direction_normal, new_center, self.width)
+        W_in = simulation_norm.flux_probe(self.direction_normal, new_center, self.width) #获得能量
 
         # save this value in the original simulation
         simulation.W_in = W_in
@@ -61,7 +61,7 @@ class mode:
         EPSILON_0_ = EPSILON_0*simulation.L0
         MU_0_ = MU_0*simulation.L0
 
-        # first extract the slice of the permittivity
+        # first extract the slice of the permittivity 首先获得permittivity的切片
         if self.direction_normal == "x":
             inds_x = [self.center[0], self.center[0]+1]
             inds_y = [int(self.center[1]-self.width/2), int(self.center[1]+self.width/2)]
@@ -74,8 +74,8 @@ class mode:
         eps_r = simulation.eps_r[inds_x[0]:inds_x[1], inds_y[0]:inds_y[1]]
         N = eps_r.size
 
-        Dxb = createDws('x', 'b', [simulation.dl], [N], matrix_format=matrix_format)
-        Dxf = createDws('x', 'f', [simulation.dl], [N], matrix_format=matrix_format)
+        Dxb = createDws('x', 'b', [simulation.dl], [N], matrix_format=matrix_format) #后向传输
+        Dxf = createDws('x', 'f', [simulation.dl], [N], matrix_format=matrix_format) #前向传输
 
         vector_eps = EPSILON_0_*eps_r.reshape((-1,))
         vector_eps_x = EPSILON_0_*grid_average(eps_r, 'x').reshape((-1,))
@@ -89,7 +89,7 @@ class mode:
             A = np.square(simulation.omega)*MU_0_*T_eps + T_eps.dot(Dxf).dot(T_epsxinv).dot(Dxb)
 
         est_beta = simulation.omega*np.sqrt(MU_0_*EPSILON_0_)*self.neff
-        (vals, vecs) = solver_eigs(A, self.order, guess_value=np.square(est_beta))
+        (vals, vecs) = solver_eigs(A, self.order, guess_value=np.square(est_beta)) #获得矩阵A的本征值和特征向量
 
         if self.order == 1:
             src = vecs
